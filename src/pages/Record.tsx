@@ -18,7 +18,7 @@ export default function Record() {
       if (status === 'stopped') {
         return (
             <>
-              <audio src={mediaBlobUrl} />
+              <audio src={mediaBlobUrl} controls={true}/>
               <Button leadingIcon={CheckIcon}>Save Recording</Button>
             </>
         );
