@@ -39,7 +39,7 @@ app.get('/sign-up', (_req: Request, res) => {
   });
 });
 
-app.use('/map', express.static('dist'));
+app.use('/record', express.static('dist'));
 app.use('/app.bundle.js', express.static('dist/app.bundle.js'));
 
 app.listen(port, () => {
