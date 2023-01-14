@@ -1,7 +1,7 @@
 import React from 'react';
 import { useReactMediaRecorder } from 'react-media-recorder';
-import {BaseStyles, Box, Button} from '@primer/react'
-import {CircleIcon, CheckIcon, StopIcon} from '@primer/octicons-react'
+import { BaseStyles, Box, Button } from '@primer/react';
+import { CircleIcon, CheckIcon, StopIcon } from '@primer/octicons-react';
 
 export default function Record() {
   const RecordView = () => {
@@ -18,12 +18,13 @@ export default function Record() {
       if (status === 'stopped') {
         return (
             <>
-              <audio src={mediaBlobUrl} controls />
+              <audio src={mediaBlobUrl} />
               <Button leadingIcon={CheckIcon}>Save Recording</Button>
             </>
         );
       }
-    }
+    };
+
     return (
       <BaseStyles>
         <Box m={4}>
@@ -36,7 +37,7 @@ export default function Record() {
     );
   };
 
-  return(
+  return (
     <RecordView />
-  )
+  );
 }
