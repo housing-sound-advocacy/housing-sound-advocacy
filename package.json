@@ -18,11 +18,13 @@
   "dependencies": {
     "@primer/octicons-react": "^17.10.2",
     "@primer/react": "^35.17.0",
+    "@types/pg": "^8.6.6",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "express-openid-connect": "^2.8.0",
     "leaflet": "^1.8.0",
     "mapbox-gl": "^2.9.2",
+    "pg": "^8.8.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-map-gl": "^7.0.18",
