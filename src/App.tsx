@@ -9,6 +9,7 @@ export default function App() {
     <ThemeProvider>
       <Router>
         <Routes>
+          <Route path='/' element={<Record />}></Route>
           <Route path='/record' element={<Record />}></Route>
           <Route path='/map' element={<Map />}></Route>
         </Routes>
