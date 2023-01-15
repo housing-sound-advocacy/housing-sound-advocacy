@@ -1,4 +1,5 @@
 import express, { Express, Request, Response } from 'express';
+import cors, { CorsOptions } from 'cors';
 import dotenv from 'dotenv';
 import { auth } from 'express-openid-connect';
 import pg from 'pg';
@@ -7,6 +8,7 @@ import { DefaultAzureCredential } from '@azure/identity';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { v1 as uuidv1 } from 'uuid';
 import { UploadedFile } from 'express-fileupload';
+import rateLimit from 'express-rate-limit';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -15,9 +17,31 @@ if (process.env.NODE_ENV !== 'production') {
 const app: Express = express();
 const port = process.env.PORT || 8080;
 
+const limiter = rateLimit({
+	 windowMs: 15 * 60 * 1000,
+	 max: 100,
+	 standardHeaders: true,
+	 legacyHeaders: false,
+});
+
 app.use(
   fileUpload(),
+  limiter,
 );
+const allowedOrigins = ['http://localhost:8000', 'https://claudewittmann.ca'];
+const corsOptions: CorsOptions = {
+  origin: function (origin, callback) {
+    // allow requests with no origin 
+    // (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not ' +
+                  'allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+};
 
 const config = {
   authRequired: false,
@@ -66,7 +90,7 @@ app.get('/', (req: Request, res: Response) => {
   res.send(req.oidc.isAuthenticated() ? 'Logged in' : 'Logged out');
 });
 
-app.get('/sound-list', (_req: Request, res: Response) => {
+app.get('/sound-list', cors(corsOptions), (_req: Request, res: Response) => {
   client.query('SELECT * FROM sounds', (err, result) => {
     if (err) throw err;
     res.send(result.rows);
