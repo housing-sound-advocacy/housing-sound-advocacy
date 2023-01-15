@@ -15,6 +15,7 @@ export default function Record() {
     const [hideUpload, setHideUpload] = useState(true);
     const [markerLat, setMarkerLat] = useState(0);
     const [markerLng, setMarkerLng] = useState(0);
+    const [showThanks, setShowThanks] = useState(false);
 
     const { status, startRecording, stopRecording, mediaBlobUrl } =
       useReactMediaRecorder({ video: false, audio: true, blobPropertyBag: { type: 'audio/mp4' } });
@@ -26,9 +27,6 @@ export default function Record() {
     };
 
     const upload = async () => {
-      console.warn('Going to upload');
-      console.warn(`Lat: ${markerLat}`);
-      console.warn(`Lng: ${markerLng}`);
       const audioBlob = await fetch(mediaBlobUrl).then((r) => r.blob());
       const audioFile = new File([audioBlob], 'recording.mp4', { type: 'audio/mp4' });
 
@@ -40,6 +38,9 @@ export default function Record() {
         method: 'POST',
         body: formData,
       });
+      if (result.status === 200) {
+        setShowThanks(true);
+      }
       console.warn(result);
     };
 
@@ -50,7 +51,7 @@ export default function Record() {
       if (status === 'recording') {
         return <Button onClick={stopRecording} leadingIcon={StopIcon}>Stop Recording</Button>;
       }
-      if (status === 'stopped') {
+      if (status === 'stopped' && !showThanks) {
         return (
             <>
               <audio src={mediaBlobUrl} controls={true}/>
@@ -59,6 +60,9 @@ export default function Record() {
               <Map updateMarkers={updateMarkers} />
             </>
         );
+      }
+      if (status === 'stopped' && showThanks) {
+        return <h1>Thanks for your contribution!</h1>;
       }
     };
 
