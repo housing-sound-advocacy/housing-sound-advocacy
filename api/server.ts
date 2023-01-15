@@ -3,6 +3,10 @@ import dotenv from 'dotenv';
 import { auth } from 'express-openid-connect';
 import pg from 'pg';
 import fileUpload from 'express-fileupload';
+import { DefaultAzureCredential } from '@azure/identity';
+import { BlobServiceClient } from '@azure/storage-blob';
+import { v1 as uuidv1 } from 'uuid';
+import { UploadedFile } from 'express-fileupload';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -33,6 +37,16 @@ const dbConfig = {
   ssl: true,
 };
 
+const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
+if (!accountName) throw Error('Azure Storage accountName not found');
+const blobServiceClient = new BlobServiceClient(
+  `https://${accountName}.blob.core.windows.net`,
+  new DefaultAzureCredential(),
+);
+const containerName = 'sounds';
+const containerClient = blobServiceClient.getContainerClient(containerName);
+console.warn('Connected to Azure Storage');
+
 // auth router attaches /login, /logout, and /callback routes to the baseURL
 app.use(auth(config));
 
@@ -59,15 +73,41 @@ app.get('/sound-list', (_req: Request, res: Response) => {
   });
 });
 
-app.post('/sound', (req: Request, res: Response) => {
+app.post('/sound', async (req: Request, res: Response) => {
   if (!req.files || Object.keys(req.files).length === 0) {
     return res.status(400).send('No files were uploaded.');
   }
-  const filename = 'blah';
-  // const text = 'INSERT INTO sounds(latitude, longitude, filename) VALUES($1, $2, $3) RETURNING *';
-  const values = [req.body.lat, req.body.lng, filename];
-  console.warn(values);
-  console.warn(req.files.file);
+  const file = req.files.file as UploadedFile;
+  const data = file.data;
+
+  // Create a unique name for the blob
+  const blobName = 'sound-' + uuidv1() + '.mp4';
+
+  // Get a block blob client
+  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+  // Display blob name and url
+  const filename = blobName;
+  const url = blockBlobClient.url;
+  console.warn(
+    `\nUploading to Azure storage as blob\n\tname: ${blobName}:\n\tURL: ${blockBlobClient.url}`,
+  );
+
+  // Upload data to the blob
+  const headers = { blobHTTPHeaders: { blobContentType: 'audio/mp4' } };
+  const uploadBlobResponse = await blockBlobClient.upload(data, data.length, headers);
+  console.warn(
+    `Blob was uploaded successfully. requestId: ${uploadBlobResponse.requestId}`,
+  );
+  const text = 'INSERT INTO sounds(latitude, longitude, filename, url, enabled) VALUES($1, $2, $3, $4, $5) RETURNING *';
+  const values = [req.body.lat, req.body.lng, filename, url, true];
+  try {
+    const result = await client.query(text, values);
+    res.send(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    return res.status(400).send('No files were uploaded.');
+  }
 });
 
 app.get('/sign-up', (_req: Request, res) => {
