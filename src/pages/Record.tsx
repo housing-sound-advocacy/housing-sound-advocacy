@@ -16,6 +16,9 @@ export default function Record() {
     const [markerLat, setMarkerLat] = useState(0);
     const [markerLng, setMarkerLng] = useState(0);
 
+    const { status, startRecording, stopRecording, mediaBlobUrl } =
+      useReactMediaRecorder({ video: false, audio: true, blobPropertyBag: { type: 'audio/mp4' } });
+
     const updateMarkers = (lat: number, lng: number) => {
       setMarkerLat(lat);
       setMarkerLng(lng);
@@ -26,10 +29,19 @@ export default function Record() {
       console.warn('Going to upload');
       console.warn(`Lat: ${markerLat}`);
       console.warn(`Lng: ${markerLng}`);
-    };
+      const audioBlob = await fetch(mediaBlobUrl).then((r) => r.blob());
+      const audioFile = new File([audioBlob], 'recording.mp4', { type: 'audio/mp4' });
 
-    const { status, startRecording, stopRecording, mediaBlobUrl } =
-      useReactMediaRecorder({ video: false, audio: true, blobPropertyBag: { type: 'audio/mp4' } });
+      const formData = new FormData();
+      formData.append('file', audioFile);
+      formData.append('lat', markerLat.toString());
+      formData.append('lng', markerLng.toString());
+      const result = await fetch('/sound', {
+        method: 'POST',
+        body: formData,
+      });
+      console.warn(result);
+    };
 
     const recordButton = () => {
       if (status === 'idle') {

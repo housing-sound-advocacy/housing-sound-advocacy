@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import { auth } from 'express-openid-connect';
 import pg from 'pg';
+import fileUpload from 'express-fileupload';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -9,6 +10,10 @@ if (process.env.NODE_ENV !== 'production') {
 
 const app: Express = express();
 const port = process.env.PORT || 8080;
+
+app.use(
+  fileUpload(),
+);
 
 const config = {
   authRequired: false,
@@ -52,6 +57,17 @@ app.get('/sound-list', (_req: Request, res: Response) => {
     if (err) throw err;
     res.send(result.rows);
   });
+});
+
+app.post('/sound', (req: Request, res: Response) => {
+  if (!req.files || Object.keys(req.files).length === 0) {
+    return res.status(400).send('No files were uploaded.');
+  }
+  const filename = 'blah';
+  // const text = 'INSERT INTO sounds(latitude, longitude, filename) VALUES($1, $2, $3) RETURNING *';
+  const values = [req.body.lat, req.body.lng, filename];
+  console.warn(values);
+  console.warn(req.files.file);
 });
 
 app.get('/sign-up', (_req: Request, res) => {
