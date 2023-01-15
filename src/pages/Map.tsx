@@ -18,8 +18,8 @@ export default function Map( props: MapProps) {
   const [marker] = useState(new mapboxgl.Marker());
 
   const mapStyles = {
-    width: '90vw',
-    height: '90vh',
+    width: '100vw',
+    height: '100vh',
   };
 
   const addMarker = (e: MapTouchEvent) => {
