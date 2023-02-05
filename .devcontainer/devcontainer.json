@@ -1,10 +1,9 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/javascript-node-postgres
+// README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
-	"name": "Node.js & PostgreSQL",
-	"dockerComposeFile": "docker-compose.yml",
-	"service": "app",
-	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+	"name": "Ubuntu",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/base:jammy",
 	"features": {
 		"ghcr.io/devcontainers/features/node:1": {},
 		"ghcr.io/meaningful-ooo/devcontainer-features/fish:1": {},
@@ -17,11 +16,10 @@
 	// "features": {},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// This can be used to network with other containers or with the host.
-	"forwardPorts": [3000, 5432, 8080, 8081]
+	"forwardPorts": [3000, 5432, 8080, 8081],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "yarn install",
+	"postCreateCommand": "npm install"
 
 	// Configure tool-specific properties.
 	// "customizations": {},
