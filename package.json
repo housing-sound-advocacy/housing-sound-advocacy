@@ -9,7 +9,7 @@
     "start": "webpack serve --open",
     "lint": "npx eslint .",
     "build": "webpack --node-env=production --mode=production",
-    "server": "DEBUG=* npx nodemon ./api/server.ts",
+    "server": "npx nodemon ./api/server.ts",
     "build-server": "npx tsc --project tsconfig.api.json"
   },
   "keywords": [],

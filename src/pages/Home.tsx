@@ -1,4 +1,5 @@
 import { useAuth0, LogoutOptions } from '@auth0/auth0-react';
+import { useNavigate } from 'react-router-dom';
 import { BaseStyles, Box, Button, Text } from '@primer/react';
 import React from 'react';
 
@@ -12,6 +13,11 @@ export default function Home() {
     return <div>Oops... {error.message}</div>;
   }
 
+  const navigate = useNavigate(); 
+  const routeChange = (path: string) =>{ 
+    navigate(path);
+  };
+
   if (isAuthenticated) {
     return (
       <BaseStyles>
@@ -19,7 +25,15 @@ export default function Home() {
           <Text fontSize={3} fontWeight="bold">
             Hello {user.name}
           </Text>
-          <Button onClick={() => logout({ returnTo: window.location.origin } as LogoutOptions )}>
+          <Button sx={{ mt: 3 }} onClick={() => routeChange('/record')}>
+            Record a story
+          </Button>
+          {user.email === process.env.ADMIN_EMAIL && (
+            <Button sx={{ mt: 3 }} onClick={() => routeChange('/admin')}>
+              Admin
+            </Button>
+          )}
+          <Button sx={{ mt: 3 }} onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>
             Log out
           </Button>
         </Box>

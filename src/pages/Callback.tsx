@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import React from 'react';
-import Home from './Home';
+import { useNavigate } from 'react-router-dom';
 
 export const Callback: React.FC = () => {
   const { error } = useAuth0();
@@ -20,9 +20,7 @@ export const Callback: React.FC = () => {
     );
   }
 
-  return (
-    <div className="page-layout">
-      <Home />
-    </div>
-  );
+  const navigate = useNavigate();
+  navigate('/');
+  return;
 };
