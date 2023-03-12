@@ -28,6 +28,8 @@ export const Auth0ProviderWithNavigate = ({
       domain={domain}
       clientId={clientId}
       authorizationParams={{
+        audience: 'https://housingadvocacy.ca',
+        scope: 'create:sounds delete:sounds',
         redirect_uri: redirectUri,
       }}
       onRedirectCallback={onRedirectCallback}

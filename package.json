@@ -9,6 +9,7 @@
     "start": "webpack serve --open",
     "lint": "npx eslint .",
     "build": "webpack --node-env=production --mode=production",
+    "build-dev": "webpack --watch --progress --node-env=development --mode=development",
     "server": "npx nodemon ./api/server.ts",
     "build-server": "npx tsc --project tsconfig.api.json"
   },
@@ -23,6 +24,7 @@
     "@primer/react": "^35.17.0",
     "@types/cors": "^2.8.13",
     "@types/express-fileupload": "^1.4.1",
+    "@types/jwt-decode": "^3.1.0",
     "@types/pg": "^8.6.6",
     "@types/uuid": "^9.0.0",
     "cors": "^2.8.5",
@@ -32,6 +34,7 @@
     "express-oauth2-jwt-bearer": "^1.3.0",
     "express-openid-connect": "^2.8.0",
     "express-rate-limit": "^6.7.0",
+    "jwt-decode": "^3.1.2",
     "leaflet": "^1.8.0",
     "mapbox-gl": "^2.9.2",
     "nocache": "^3.0.4",

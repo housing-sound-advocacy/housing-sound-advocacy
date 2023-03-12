@@ -1,22 +1,55 @@
-import { useAuth0, LogoutOptions } from '@auth0/auth0-react';
+import { useAuth0 } from '@auth0/auth0-react';
+import jwtDecode, { JwtPayload } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 import { BaseStyles, Box, Button, Text } from '@primer/react';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+
+interface Auth0JwtPayload extends JwtPayload {
+  azp: string;
+  scope: string;
+  permissions: string[]
+}
 
 export default function Home() {
-  const { isLoading, isAuthenticated, error, user, loginWithRedirect, logout } = useAuth0();
+  const { isLoading, isAuthenticated, error, user, loginWithRedirect, logout, getAccessTokenSilently } = useAuth0();
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-  if (error) {
-    return <div>Oops... {error.message}</div>;
-  }
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: 'https://housingadvocacy.ca',
+            scope: 'delete:sounds',
+          },
+        });
+        const decoded = jwtDecode<Auth0JwtPayload>(token);
+        if (decoded.permissions.includes('delete:sounds')) {
+          setIsAdmin(true);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [getAccessTokenSilently]);
 
   const navigate = useNavigate(); 
   const routeChange = (path: string) =>{ 
     navigate(path);
   };
+
+  const logMeOut = () => {
+    logout({ logoutParams: { returnTo: window.location.origin } });
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Oops... {error.message}</div>;
+  }
 
   if (isAuthenticated) {
     return (
@@ -28,12 +61,12 @@ export default function Home() {
           <Button sx={{ mt: 3 }} onClick={() => routeChange('/record')}>
             Record a story
           </Button>
-          {user.email === process.env.ADMIN_EMAIL && (
+          {isAdmin && (
             <Button sx={{ mt: 3 }} onClick={() => routeChange('/admin')}>
               Admin
             </Button>
           )}
-          <Button sx={{ mt: 3 }} onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>
+          <Button sx={{ mt: 3 }} onClick={() => logMeOut()}>
             Log out
           </Button>
         </Box>
