@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
+import nocache from 'nocache';
 import cors, { CorsOptions } from 'cors';
 import dotenv from 'dotenv';
-import { auth } from 'express-openid-connect';
 import pg from 'pg';
 import fileUpload from 'express-fileupload';
 import { DefaultAzureCredential } from '@azure/identity';
@@ -9,6 +9,9 @@ import { BlobServiceClient } from '@azure/storage-blob';
 import { v1 as uuidv1 } from 'uuid';
 import { UploadedFile } from 'express-fileupload';
 import rateLimit from 'express-rate-limit';
+// import { checkRequiredPermissions, validateAccessToken } from './middleware/auth0.middleware';
+import { errorHandler } from './middleware/error.middleware';
+import { notFoundHandler } from './middleware/not-found.middleware';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -27,9 +30,11 @@ const limiter = rateLimit({
 app.use(
   fileUpload(),
   limiter,
+  nocache(),
 );
-const allowedOrigins = ['http://localhost:8000', 'https://claudewittmann.ca'];
+const allowedOrigins = ['http://localhost:8000', 'https://claudewittmann.ca', 'https://db18-142-198-63-210.ngrok.io'];
 const corsOptions: CorsOptions = {
+  allowedHeaders: ['Authorization', 'Content-Type'],
   origin: function (origin, callback) {
     // allow requests with no origin 
     // (like mobile apps or curl requests)
@@ -41,15 +46,6 @@ const corsOptions: CorsOptions = {
     }
     return callback(null, true);
   },
-};
-
-const config = {
-  authRequired: false,
-  auth0Logout: true,
-  secret: process.env.AUTH_SECRET,
-  baseURL: process.env.AUTH_BASE_URL,
-  clientID: process.env.AUTH_CLIENT_ID,
-  issuerBaseURL: process.env.AUTH_ISSUER_BASE_URL,
 };
 
 const dbConfig = {
@@ -71,24 +67,13 @@ const containerName = 'sounds';
 const containerClient = blobServiceClient.getContainerClient(containerName);
 console.warn('Connected to Azure Storage');
 
-// auth router attaches /login, /logout, and /callback routes to the baseURL
-app.use(auth(config));
-
-app.use((req, res, next) => {
-  res.locals.isAuthenticated = req.oidc.isAuthenticated();
-  next();
-});
-
 const client = new pg.Client(dbConfig);
 
 client.connect(err => {
   if (err) throw err;
 });
 
-// req.isAuthenticated is provided from the auth router
-app.get('/', (req: Request, res: Response) => {
-  res.send(req.oidc.isAuthenticated() ? 'Logged in' : 'Logged out');
-});
+app.use('/', express.static('dist'));
 
 app.get('/sound-list', cors(corsOptions), (_req: Request, res: Response) => {
   client.query('SELECT * FROM sounds', (err, result) => {
@@ -134,17 +119,12 @@ app.post('/sound', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/sign-up', (_req: Request, res) => {
-  res.oidc.login({
-    authorizationParams: {
-      screen_hint: 'signup',
-    },
-  });
-});
-
 app.use('/record', express.static('dist'));
 app.use('/map', express.static('dist'));
+app.use('/callback', express.static('dist'));
 app.use('/app.bundle.js', express.static('dist/app.bundle.js'));
+app.use(errorHandler);
+app.use(notFoundHandler);
 
 app.listen(port, () => {
   console.warn(`⚡️[server]: Server is running at https://localhost:${port}`);
