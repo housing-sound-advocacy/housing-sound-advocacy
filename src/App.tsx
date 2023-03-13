@@ -12,7 +12,6 @@ export default function App() {
   return (
     <ThemeProvider>
       <Router>
-        <Auth0ProviderWithNavigate>
           <Routes>
             <Route
               path='/'
@@ -25,7 +24,6 @@ export default function App() {
             <Route path='/map' element={<Map />} />
             <Route path='/callback' element={<Callback />} />
           </Routes>
-        </Auth0ProviderWithNavigate>
       </Router>
     </ThemeProvider>
   );
