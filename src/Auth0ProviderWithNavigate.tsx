@@ -19,6 +19,18 @@ export const Auth0ProviderWithNavigate = ({
     navigate(appState?.returnTo || window.location.pathname);
   };
 
+  if (!domain) {
+    console.error('AUTH_DOMAIN is not defined');
+  }
+
+  if (!clientId) {
+    console.error('AUTH_CLIENT_ID is not defined');
+  }
+
+  if (!redirectUri) {
+    console.error('AUTH_CALLBACK_URL is not defined');
+  }
+
   if (!(domain && clientId && redirectUri)) {
     return null;
   }
