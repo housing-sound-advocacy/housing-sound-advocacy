@@ -10,21 +10,17 @@ export const Auth0ProviderWithNavigate = ({
   children,
 }: PropsWithChildren<Auth0ProviderWithNavigateProps>): JSX.Element | null => {
   const navigate = useNavigate();
-  console.warn('I AM HERE DAMMIT');
 
   const domain = process.env.AUTH_DOMAIN;
   const clientId = process.env.AUTH_CLIENT_ID;
   const redirectUri = process.env.AUTH_CALLBACK_URL;
-
-  console.warn('GOT HERE');
 
   const onRedirectCallback = (appState?: AppState) => {
     navigate(appState?.returnTo || window.location.pathname);
   };
 
   if (!(domain && clientId && redirectUri)) {
-    console.warn('RETURNING');
-    // return null;
+    return null;
   }
 
   return (
