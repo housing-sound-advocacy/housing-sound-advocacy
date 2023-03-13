@@ -24,7 +24,7 @@ export const Auth0ProviderWithNavigate = ({
 
   if (!(domain && clientId && redirectUri)) {
     console.warn('RETURNING');
-    return null;
+    // return null;
   }
 
   return (
