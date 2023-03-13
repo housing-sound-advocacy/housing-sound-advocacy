@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 import { useReactMediaRecorder } from 'react-media-recorder';
 import { BaseStyles, Box, Button, Text } from '@primer/react';
 import { CircleIcon, StopIcon, UploadIcon } from '@primer/octicons-react';
@@ -15,6 +16,7 @@ export default function Record() {
   };
 
   const RecordView = () => {
+    const { getAccessTokenSilently } = useAuth0();
 
     const [hideUpload, setHideUpload] = useState(true);
     const [markerLat, setMarkerLat] = useState(0);
@@ -22,9 +24,26 @@ export default function Record() {
     const [showThanks, setShowThanks] = useState(false);
     const [showMap, setShowMap] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [accessToken, setAccessToken] = useState('');
 
     const { status, startRecording, stopRecording, mediaBlobUrl } =
       useReactMediaRecorder({ video: false, audio: true, blobPropertyBag: { type: 'audio/mp4' } });
+
+    useEffect(() => {
+      (async () => {
+        try {
+          const token = await getAccessTokenSilently({
+            authorizationParams: {
+              audience: 'https://housingadvocacy.ca',
+              scope: 'delete:sounds',
+            },
+          });
+          setAccessToken(token);
+        } catch (e) {
+          console.error(e);
+        }
+      })();
+    }, [getAccessTokenSilently]);
 
     const updateMarkers = (lat: number, lng: number) => {
       setMarkerLat(lat);
@@ -49,6 +68,9 @@ export default function Record() {
       const result = await fetch('/sound', {
         method: 'POST',
         body: formData,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
       if (result.status === 200) {
         setShowThanks(true);
