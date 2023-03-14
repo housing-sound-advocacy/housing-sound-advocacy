@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useReactMediaRecorder } from 'react-media-recorder';
-import { BaseStyles, Box, Button, Text } from '@primer/react';
+import { BaseStyles, Box, Button, Textarea, Text } from '@primer/react';
 import { CircleIcon, StopIcon, UploadIcon } from '@primer/octicons-react';
 import { BiMap, BiMicrophoneOff, BiMicrophone, BiUpload } from 'react-icons/bi';
 import { GiSeatedMouse } from 'react-icons/gi';
@@ -16,15 +16,21 @@ export default function Record() {
   };
 
   const RecordView = () => {
+    enum Progress {
+      RecordSound,
+      Description,
+      Locate,
+      Uploading,
+      Finished,
+    }
     const { getAccessTokenSilently } = useAuth0();
 
     const [hideUpload, setHideUpload] = useState(true);
     const [markerLat, setMarkerLat] = useState(0);
     const [markerLng, setMarkerLng] = useState(0);
-    const [showThanks, setShowThanks] = useState(false);
-    const [showMap, setShowMap] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
     const [accessToken, setAccessToken] = useState('');
+    const [progress, setProgress] = useState(Progress.RecordSound);
+    const [textValue, setTextValue] = React.useState('');
 
     const { status, startRecording, stopRecording, mediaBlobUrl } =
       useReactMediaRecorder({ video: false, audio: true, blobPropertyBag: { type: 'audio/mp4' } });
@@ -32,12 +38,7 @@ export default function Record() {
     useEffect(() => {
       (async () => {
         try {
-          const token = await getAccessTokenSilently({
-            authorizationParams: {
-              audience: 'https://housingadvocacy.ca',
-              scope: 'delete:sounds',
-            },
-          });
+          const token = await getAccessTokenSilently();
           setAccessToken(token);
         } catch (e) {
           console.error(e);
@@ -45,19 +46,26 @@ export default function Record() {
       })();
     }, [getAccessTokenSilently]);
 
+    const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setTextValue(event.target.value);
+    };
+
     const updateMarkers = (lat: number, lng: number) => {
       setMarkerLat(lat);
       setMarkerLng(lng);
       setHideUpload(false);
     };
 
+    const addDescription = () => {
+      setProgress(Progress.Description);
+    };
+
     const showTheMap = () => {
-      setShowMap(true);
+      setProgress(Progress.Locate);
     };
 
     const upload = async () => {
-      setIsUploading(true);
-      setShowMap(false);
+      setProgress(Progress.Uploading);
       const audioBlob = await fetch(mediaBlobUrl).then((r) => r.blob());
       const audioFile = new File([audioBlob], 'recording.mp4', { type: 'audio/mp4' });
 
@@ -65,6 +73,7 @@ export default function Record() {
       formData.append('file', audioFile);
       formData.append('lat', markerLat.toString());
       formData.append('lng', markerLng.toString());
+      formData.append('description', textValue);
       const result = await fetch('/sound', {
         method: 'POST',
         body: formData,
@@ -73,8 +82,7 @@ export default function Record() {
         },
       });
       if (result.status === 200) {
-        setShowThanks(true);
-        setIsUploading(false);
+        setProgress(Progress.Finished);
       }
       console.warn(result);
     };
@@ -128,7 +136,7 @@ export default function Record() {
           </Box>
         );
       }
-      if (status === 'stopped' && !showThanks && !showMap && !isUploading) {
+      if (status === 'stopped' && progress === Progress.RecordSound) {
         return (
           <Box borderWidth={1} borderStyle="solid" p={3} m={4} bg={'white'} borderRadius={2} className={'center'}>
             <div>
@@ -145,7 +153,7 @@ export default function Record() {
                   </Text>
                 </div>
                 <div>
-                  <Button onClick={showTheMap} sx={{ display: 'inline' }}>Locate the sound!</Button>
+                  <Button onClick={addDescription} sx={{ display: 'inline' }}>Add a description</Button>
                 </div>
                 <div>
                   <Button onClick={reload} sx={{ display: 'inline', marginTop: 3 }}>Nope, Restart</Button>
@@ -155,7 +163,20 @@ export default function Record() {
           </Box>
         );
       }
-      if (status === 'stopped' && !showThanks && showMap) {
+      if (status === 'stopped' && progress === Progress.Description) {
+        return (
+          <Box borderWidth={1} borderStyle="solid" p={3} m={4} bg={'white'} borderRadius={2} className={'center'}>
+            <Textarea
+              placeholder="Enter a description (optional)"
+              onChange={handleTextChange}
+              value={textValue}
+              sx={{ width: '90%', marginBottom: 3 }}
+            />
+            <Button onClick={showTheMap} sx={{ display: 'inline' }}>Locate the sound!</Button>
+          </Box>
+        );
+      }
+      if (status === 'stopped' && progress === Progress.Locate) {
         return (
           <>
             <Map updateMarkers={updateMarkers} />
@@ -165,7 +186,7 @@ export default function Record() {
           </>
         );
       }
-      if (status === 'stopped' && isUploading) {
+      if (status === 'stopped' && progress === Progress.Uploading) {
         return (
           <Box borderWidth={1} borderStyle="solid" p={3} m={4} bg={'white'} borderRadius={2} className={'center'}>
             <div>
@@ -183,7 +204,7 @@ export default function Record() {
           </Box>
         );
       }
-      if (status === 'stopped' && showThanks) {
+      if (status === 'stopped' && progress === Progress.Finished) {
         return (
           <Box borderWidth={1} borderStyle="solid" p={3} m={4} bg={'white'} borderRadius={2} className={'center'}>
             <div>

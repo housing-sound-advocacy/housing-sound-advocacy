@@ -112,9 +112,15 @@ app.post(
     console.warn(
       `Blob was uploaded successfully. requestId: ${uploadBlobResponse.requestId}`,
     );
-    const text =
-      'INSERT INTO sounds(latitude, longitude, filename, url, enabled) VALUES($1, $2, $3, $4, $5) RETURNING *';
-    const values = [req.body.lat, req.body.lng, filename, url, true];
+    const text = `INSERT INTO sounds(
+      latitude,
+      longitude,
+      filename,
+      url,
+      description,
+      enabled
+    ) VALUES($1, $2, $3, $4, $5, $6) RETURNING *`;
+    const values = [req.body.lat, req.body.lng, filename, url, req.body.description, true];
     try {
       const result = await client.query(text, values);
       res.send(result.rows[0]);
