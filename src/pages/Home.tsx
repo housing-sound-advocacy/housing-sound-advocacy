@@ -77,10 +77,10 @@ export default function Home() {
       <BaseStyles>
         <Box borderWidth={1} borderStyle="solid" p={3} m={4} bg={'white'} borderRadius={2} className={'center'}>
           <Text>
-            Please login to add content
+            Please login or sign up to add content
           </Text>
           <Button onClick={() => loginWithRedirect()}>
-            Log in
+            Log In or Sign Up
           </Button>
         </Box>
       </BaseStyles>
