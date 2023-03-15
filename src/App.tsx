@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from '@primer/react';
+import Admin from './pages/Admin';
 import Map from './pages/Map';
 import Record from './pages/Record';
 import Home from './pages/Home';
@@ -24,6 +25,10 @@ export default function App() {
             />
             <Route path='/map' element={<Map />} />
             <Route path='/callback' element={<Callback />} />
+            <Route
+              path='/admin'
+              element={<AuthenticationGuard component={Admin} />}
+            />
           </Routes>
         </Auth0ProviderWithNavigate>
       </Router>

@@ -76,11 +76,76 @@ export async function createServer(): Promise<Express> {
   app.use('/', express.static('dist'));
 
   app.get('/sound-list', cors(corsOptions), (_req: Request, res: Response) => {
-    client.query('SELECT * FROM sounds', (err, result) => {
+    client.query('SELECT * FROM sounds WHERE enabled=true', (err, result) => {
       if (err) throw err;
       res.send(result.rows);
     });
   });
+
+  app.get(
+    '/full-sound-list',
+    validateAccessToken,
+    checkRequiredPermissions(['delete:sounds']),
+    cors(corsOptions),
+    (_req: Request, res: Response) => {
+      client.query('SELECT * FROM sounds ORDER BY id', (err, result) => {
+        if (err) throw err;
+        res.send(result.rows);
+      });
+    },
+  );
+
+  app.post(
+    '/sound-status',
+    validateAccessToken,
+    checkRequiredPermissions(['delete:sounds']),
+    async (req: Request, res: Response) => {
+      const text = 'UPDATE sounds SET enabled=$1 WHERE id=$2';
+      const values = [req.body.enabled, req.body.id];
+      try {
+        const result = await client.query(text, values);
+        res.send(result.rows[0]);
+      } catch (err) {
+        console.error(err);
+        return res.status(400).send('Could not update sound status');
+      }
+    },
+  );
+
+  app.post(
+    '/delete-sound',
+    validateAccessToken,
+    checkRequiredPermissions(['delete:sounds']),
+    async (req: Request, res: Response) => {
+      const text = 'SELECT filename FROM sounds WHERE id=$1';
+      const values = [req.body.id];
+      let filename: string;
+      try {
+        const result = await client.query(text, values);
+        filename = result.rows[0].filename;
+      } catch (err) {
+        console.error(err);
+        return res.status(400).send('Could not update sound status');
+      }
+      if (filename) {
+        try {
+          const blockBlobClient = containerClient.getBlockBlobClient(filename);
+          await blockBlobClient.delete();
+        } catch (err) {
+          return res.status(400).send('Could not delete sound');
+        }
+      }
+      const deleteText = 'DELETE FROM sounds WHERE id=$1';
+      const deleteValues = [req.body.id];
+      try {
+        await client.query(deleteText, deleteValues);
+        res.status(200).send('Sound deleted');
+      } catch (err) {
+        console.error(err);
+        return res.status(400).send('Could not update sound status');
+      }
+    },
+  );
 
   app.post(
     '/sound',
@@ -133,6 +198,7 @@ export async function createServer(): Promise<Express> {
 
   app.use('/record', express.static('dist'));
   app.use('/map', express.static('dist'));
+  app.use('/admin', express.static('dist'));
   app.use('/callback', express.static('dist'));
   app.use('/app.bundle.js', express.static('dist/app.bundle.js'));
   app.use(errorHandler);
