@@ -31,6 +31,7 @@ export async function createServer(): Promise<Express> {
     fileUpload(),
     limiter,
     nocache(),
+    express.urlencoded({ extended: true }),
   );
   const allowedOrigins = ['http://localhost:8000', 'https://claudewittmann.ca', 'https://db18-142-198-63-210.ngrok.io'];
   const corsOptions: CorsOptions = {
@@ -59,7 +60,6 @@ export async function createServer(): Promise<Express> {
   };
 
   const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
-  // if (!accountName) throw Error('Azure Storage accountName not found');
   const blobServiceClient = new BlobServiceClient(
     `https://${accountName}.blob.core.windows.net`,
     new DefaultAzureCredential(),
@@ -100,12 +100,8 @@ export async function createServer(): Promise<Express> {
     validateAccessToken,
     checkRequiredPermissions(['delete:sounds']),
     async (req: Request, res: Response) => {
-      console.log('1')
       const text = 'UPDATE sounds SET enabled=$1 WHERE id=$2';
-      console.log(text);
-      console.log(req.body);
       const values = [req.body.enabled, req.body.id];
-      console.log(values);
       try {
         const result = await client.query(text, values);
         res.send(result.rows[0]);
@@ -131,11 +127,13 @@ export async function createServer(): Promise<Express> {
         console.error(err);
         return res.status(400).send('Could not update sound status');
       }
+
       if (filename) {
         try {
           const blockBlobClient = containerClient.getBlockBlobClient(filename);
           await blockBlobClient.delete();
         } catch (err) {
+          console.error(err);
           return res.status(400).send('Could not delete sound');
         }
       }

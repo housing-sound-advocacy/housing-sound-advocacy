@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { Express, Request, Response, NextFunction } from 'express';
 import { Client } from 'pg';
+import { UploadedFile } from 'express-fileupload';
 import { createServer } from '../api';
 import { checkRequiredPermissions, validateAccessToken } from '../middleware/auth0.middleware';
 
@@ -27,12 +28,28 @@ jest.mock('cors', () => {
   });
 });
 
+jest.mock('uuid', () => ({ v1: jest.fn(() => 'mock-uuid') }));
+
+const blobName = 'sound-mock-uuid.mp4';
+const mockUpload = jest.fn().mockResolvedValue(null);
 jest.mock('@azure/storage-blob', () => ({
   // ...jest.requireActual('@azure/storage-blob'), // keep other props as they are
   BlobServiceClient: jest.fn().mockImplementation(() => {
     return {
       getContainerClient: jest.fn().mockImplementation(() => {
-        return 'sounds';
+        return {
+          getBlockBlobClient: jest.fn().mockImplementation(() => {
+            return {
+              delete: jest.fn().mockImplementation(() => {
+                return {
+                  blobBody: 'blobBody',
+                };
+              }),
+              upload: mockUpload,
+              url: `https://example.com/${blobName}`,
+            };
+          }),
+        };
       }),
     };
   }),
@@ -88,7 +105,6 @@ describe('GET STATIC', () => {
   });
 });
 
-/*
 describe('GET API', () => {
   test('should return a list of sounds', async () => {
     const mockSounds: SoundRow[] = [
@@ -138,13 +154,11 @@ describe('GET API', () => {
     expect(res.body).toEqual(mockSounds);
   });
 });
-*/
 
-    /*
 describe('POST API', () => {
   test('should update sound status', async () => {
-    const soundId = 1;
-    const soundEnabled = false;
+    const soundId = '1';
+    const soundEnabled = 'false';
 
     (validateAccessToken as jest.Mock)
       .mockImplementationOnce((_req: Request, _res: Response, next: NextFunction) => {
@@ -157,12 +171,8 @@ describe('POST API', () => {
       });
 
     (client.query as jest.Mock)
-      .mockImplementationOnce((
-        _text: string,
-        _values: [boolean, number],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        callback: (err: Error | null, result: { rows: any[] }) => void) => {
-        callback(null, { rows: [] });
+      .mockImplementationOnce(async (_text: string, _values: [string, string]) => {
+        return { rows: [] };
       });
 
     const res = await request(server)
@@ -176,5 +186,100 @@ describe('POST API', () => {
       [soundEnabled, soundId],
     );
   });
+
+  test('should delete sound status', async () => {
+    const soundId = '1';
+    const filename = 'sound1.mp3';
+
+    (validateAccessToken as jest.Mock)
+      .mockImplementationOnce((_req: Request, _res: Response, next: NextFunction) => {
+        next();
+      });
+
+    (checkRequiredPermissions as jest.Mock)
+      .mockImplementationOnce((_req: Request, _res: Response, next: NextFunction) => {
+        next();
+      });
+
+    (client.query as jest.Mock)
+      .mockResolvedValueOnce({ rows: [{ filename }] })
+      .mockResolvedValueOnce({});
+
+    const res = await request(server)
+      .post('/delete-sound')
+      .send(`id=${soundId}`)
+      .set('Content-Type', 'application/x-www-form-urlencoded');
+
+    expect(res.status).toEqual(200);
+    expect(client.query).toHaveBeenCalledWith(
+      'SELECT filename FROM sounds WHERE id=$1',
+      [soundId],
+    );
+    expect(client.query).toHaveBeenCalledWith(
+      'DELETE FROM sounds WHERE id=$1',
+      [soundId],
+    );
+  });
+
+  test('should upload sound and create a new sound entry', async () => {
+    const fileData = Buffer.from('test-data');
+
+    const mockFile: UploadedFile = {
+      data: fileData,
+      name: 'sound.mp4',
+      tempFilePath: '',
+      truncated: false,
+      size: fileData.length,
+      md5: 'md5-hash',
+      mv: () => Promise.resolve(),
+      mimetype: 'audio/mp4',
+      encoding: 'utf-8',
+    };
+
+    const soundData = {
+      lat: '37.7749',
+      lng: '-122.4194',
+      description: 'Test sound',
+    };
+
+    (validateAccessToken as jest.Mock)
+      .mockImplementationOnce((_req: Request, _res: Response, next: NextFunction) => {
+        next();
+      });
+
+    (checkRequiredPermissions as jest.Mock)
+      .mockImplementationOnce((_req: Request, _res: Response, next: NextFunction) => {
+        next();
+      });
+
+    (client.query as jest.Mock)
+      .mockResolvedValueOnce(
+        { rows: [{ id: 1, ...soundData, filename: blobName, url: `https://example.com/${blobName}`, enabled: true }] },
+      );
+
+    const res = await request(server)
+      .post('/sound')
+      .field('lat', soundData.lat)
+      .field('lng', soundData.lng)
+      .field('description', soundData.description)
+      .attach('file', mockFile.data, 'sound.mp4')
+      .set('Content-Type', 'multipart/form-data');
+
+    expect(res.status).toEqual(200);
+    expect(res.body)
+      .toMatchObject({ ...soundData, filename: blobName, url: `https://example.com/${blobName}`, enabled: true });
+
+    expect(mockUpload).toHaveBeenCalled();
+    expect(client.query).toHaveBeenCalledWith(
+      `INSERT INTO sounds(
+        latitude,
+        longitude,
+        filename,
+        url,
+        description,
+        enabled
+      ) VALUES($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [soundData.lat, soundData.lng, blobName, `https://example.com/${blobName}`, soundData.description, true],
+    );
+  });
 });
-    */
