@@ -100,8 +100,12 @@ export async function createServer(): Promise<Express> {
     validateAccessToken,
     checkRequiredPermissions(['delete:sounds']),
     async (req: Request, res: Response) => {
+      console.log('1')
       const text = 'UPDATE sounds SET enabled=$1 WHERE id=$2';
+      console.log(text);
+      console.log(req.body);
       const values = [req.body.enabled, req.body.id];
+      console.log(values);
       try {
         const result = await client.query(text, values);
         res.send(result.rows[0]);

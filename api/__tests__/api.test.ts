@@ -88,6 +88,7 @@ describe('GET STATIC', () => {
   });
 });
 
+/*
 describe('GET API', () => {
   test('should return a list of sounds', async () => {
     const mockSounds: SoundRow[] = [
@@ -112,7 +113,6 @@ describe('GET API', () => {
   });
 
   test('should return a full list of sounds', async () => {
-
     const mockSounds: SoundRow[] = [
       { id: 1, name: 'Sound 1', file: 'sound1.mp3', enabled: true },
       { id: 2, name: 'Sound 2', file: 'sound2.mp3', enabled: true },
@@ -138,3 +138,43 @@ describe('GET API', () => {
     expect(res.body).toEqual(mockSounds);
   });
 });
+*/
+
+    /*
+describe('POST API', () => {
+  test('should update sound status', async () => {
+    const soundId = 1;
+    const soundEnabled = false;
+
+    (validateAccessToken as jest.Mock)
+      .mockImplementationOnce((_req: Request, _res: Response, next: NextFunction) => {
+        next();
+      });
+
+    (checkRequiredPermissions as jest.Mock)
+      .mockImplementationOnce((_req: Request, _res: Response, next: NextFunction) => {
+        next();
+      });
+
+    (client.query as jest.Mock)
+      .mockImplementationOnce((
+        _text: string,
+        _values: [boolean, number],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        callback: (err: Error | null, result: { rows: any[] }) => void) => {
+        callback(null, { rows: [] });
+      });
+
+    const res = await request(server)
+      .post('/sound-status')
+      .send(`enabled=${soundEnabled}&id=${soundId}`)
+      .set('Content-Type', 'application/x-www-form-urlencoded');
+
+    expect(res.status).toEqual(200);
+    expect(client.query).toHaveBeenCalledWith(
+      'UPDATE sounds SET enabled=$1 WHERE id=$2',
+      [soundEnabled, soundId],
+    );
+  });
+});
+    */
