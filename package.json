@@ -13,7 +13,7 @@
     "server": "npx nodemon ./api/server.ts",
     "build-server": "npx tsc --project tsconfig.api.json",
     "test:server": "ENV_FILE=.env.test npx jest --config jest.server.config.js",
-    "test:server:watch": "ENV_FILE=.env.test npx jest --watch --config jest.server.config.js"
+    "test:server:watch": "ENV_FILE=.env.test npx jest --watch --detectOpenHandles --config jest.server.config.js"
   },
   "keywords": [],
   "author": "",
@@ -27,7 +27,6 @@
     "@types/cors": "^2.8.13",
     "@types/express-fileupload": "^1.4.1",
     "@types/jwt-decode": "^3.1.0",
-    "@types/pg": "^8.6.6",
     "@types/uuid": "^9.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",
@@ -58,6 +57,7 @@
     "@types/leaflet": "^1.7.11",
     "@types/mapbox-gl": "^2.7.10",
     "@types/node": "^18.6.4",
+    "@types/pg": "^8.6.6",
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
     "@types/supertest": "^2.0.12",
